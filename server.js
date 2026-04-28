@@ -7,6 +7,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+    res.send("OK");
+});
+
 app.use("/recipes", recipeRoutes);
 
 app.listen(3000, () => {
