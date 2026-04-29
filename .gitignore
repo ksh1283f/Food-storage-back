@@ -4,6 +4,12 @@
 # Dependencies
 node_modules/
 
+# Build output
+dist/
+
+# Firebase service account
+firebase-service-account.json
+
 # Logs
 logs
 *.log
