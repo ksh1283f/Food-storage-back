@@ -26,7 +26,7 @@ export async function getAIRecipes({
                 content: prompt,
             }
         ],
-        temperature: 0.7,
+        // temperature: 0.7,
     });
 
     const text = response.choices[0].message.content;
