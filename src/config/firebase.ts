@@ -1,21 +1,25 @@
 import * as admin from 'firebase-admin';
 
-if (!admin.apps.length) {
-  let serviceAccount: object;
+let initError: Error | null = null;
 
+if (!admin.apps.length) {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+    });
   } else if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
-    serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
+    const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+    });
   } else {
-    throw new Error(
+    initError = new Error(
       'Firebase credentials not found. Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH.'
     );
+    console.error('[Firebase]', initError.message);
   }
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-  });
 }
 
+export { initError };
 export default admin;

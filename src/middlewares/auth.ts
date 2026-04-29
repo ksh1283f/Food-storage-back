@@ -1,11 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
-import admin from '../config/firebase';
+import admin, { initError } from '../config/firebase';
 
 export async function authenticate(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  if (initError) {
+    res.status(503).json({ error: 'Authentication service unavailable' });
+    return;
+  }
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith('Bearer ')) {
