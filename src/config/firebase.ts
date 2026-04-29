@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import * as path from 'path';
 
 let initError: Error | null = null;
 
@@ -9,7 +10,7 @@ if (!admin.apps.length) {
       credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
     });
   } else if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
-    const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
+    const serviceAccount = require(path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PATH));
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
     });
