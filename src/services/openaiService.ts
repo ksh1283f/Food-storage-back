@@ -1,4 +1,6 @@
 import OpenAI from 'openai';
+import crypto from 'crypto';
+import pool from '../config/db';
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -21,9 +23,28 @@ interface RecipeRecommendResult {
   recipes: RecipeItem[];
 }
 
+function buildCacheKey(input: RecipeRecommendInput): string {
+  const normalized = JSON.stringify({
+    ingredients: [...input.ingredients].sort(),
+    expiringIngredients: [...input.expiringIngredients].sort(),
+    difficulty: input.preferences?.difficulty ?? 'easy',
+  });
+  return crypto.createHash('md5').update(normalized).digest('hex');
+}
+
 export async function getAIRecipes(
   input: RecipeRecommendInput
 ): Promise<RecipeRecommendResult> {
+  const cacheKey = buildCacheKey(input);
+
+  const cached = await pool.query<{ result: RecipeRecommendResult }>(
+    'SELECT result FROM recipe_cache WHERE cache_key = $1',
+    [cacheKey]
+  );
+  if (cached.rows.length > 0) {
+    return cached.rows[0].result;
+  }
+
   const { ingredients, expiringIngredients, preferences } = input;
   const prompt = buildPrompt({ ingredients, expiringIngredients, preferences });
 
@@ -36,7 +57,14 @@ export async function getAIRecipes(
   });
 
   const text = response.choices[0].message.content ?? '{}';
-  return JSON.parse(text) as RecipeRecommendResult;
+  const result = JSON.parse(text) as RecipeRecommendResult;
+
+  await pool.query(
+    'INSERT INTO recipe_cache (cache_key, result) VALUES ($1, $2) ON CONFLICT (cache_key) DO NOTHING',
+    [cacheKey, JSON.stringify(result)]
+  );
+
+  return result;
 }
 
 function buildPrompt({ ingredients, expiringIngredients, preferences }: RecipeRecommendInput): string {
