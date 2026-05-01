@@ -28,6 +28,11 @@ export async function getUserRecipes(req: Request, res: Response): Promise<void>
 }
 
 export async function recommendRecipes(req: Request, res: Response): Promise<void> {
-  const result = await getAIRecipes(req.body);
-  res.json(result);
+  try {
+    const result = await getAIRecipes(req.body);
+    res.json(result);
+  } catch (err) {
+    console.error('[recommendRecipes]', err);
+    res.status(500).json({ error: 'Failed to get recipe recommendations' });
+  }
 }
