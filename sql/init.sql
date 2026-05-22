@@ -1,3 +1,13 @@
+CREATE TABLE IF NOT EXISTS users (
+  uid          VARCHAR(255) PRIMARY KEY,
+  email        VARCHAR(255),
+  display_name VARCHAR(255),
+  photo_url    TEXT,
+  provider     VARCHAR(50)  NOT NULL DEFAULT 'google.com',
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS recipes (
   id          SERIAL PRIMARY KEY,
   user_id     VARCHAR(255) NOT NULL,
