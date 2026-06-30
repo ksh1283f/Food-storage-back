@@ -23,6 +23,23 @@ interface RecipeRecommendResult {
   recipes: RecipeItem[];
 }
 
+function verifyIngredients(
+  result: RecipeRecommendResult,
+  ownedIngredients: string[]
+): RecipeRecommendResult {
+  const owned = new Set(ownedIngredients.map((i) => i.trim()));
+
+  const recipes = result.recipes.map((recipe) => {
+    const missing = recipe.ingredients.filter((i) => !owned.has(i.trim()));
+    return {
+      ...recipe,
+      missingIngredients: [...new Set([...recipe.missingIngredients, ...missing])],
+    };
+  });
+
+  return { recipes };
+}
+
 function buildCacheKey(input: RecipeRecommendInput): string {
   const normalized = JSON.stringify({
     ingredients: [...input.ingredients].sort(),
@@ -59,12 +76,14 @@ export async function getAIRecipes(
   const text = response.choices[0].message.content ?? '{}';
   const result = JSON.parse(text) as RecipeRecommendResult;
 
+  const verified = verifyIngredients(result, ingredients);
+
   await pool.query(
     'INSERT INTO recipe_cache (cache_key, result) VALUES ($1, $2) ON CONFLICT (cache_key) DO NOTHING',
-    [cacheKey, JSON.stringify(result)]
+    [cacheKey, JSON.stringify(verified)]
   );
 
-  return result;
+  return verified;
 }
 
 function buildPrompt({ ingredients, expiringIngredients, preferences }: RecipeRecommendInput): string {
